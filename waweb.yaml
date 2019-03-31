@@ -1,0 +1,213 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: launch-within-docker
+data:
+  launch_within_docker.sh: |
+    #!/bin/bash
+    #
+    # December 16, 2016
+    #
+
+    HTTP_ROOT=/var/www/html
+    HTTPD_CONF=/etc/lighttpd/lighttpd.conf
+    MEDIA_ROOT=/usr/local/wamedia
+    DATA_DIR=/usr/local/waent/data
+    CFG_DIR=${DATA_DIR}/web
+    LOG_DIR=/var/log/whatsapp
+    TOOLS_DIR=/opt/whatsapp/tools
+    DB_CFG_DIR=/var/lib/whatsapp
+    SCRIPTS_DIR=${HTTP_ROOT}/src/WhatsApp/Scripts
+
+    # export version
+    export WA_VERSION=`cat /.version`
+
+    # allow writes to the outgoing media mountpoint
+    mkdir -p ${MEDIA_ROOT}/outgoing ${MEDIA_ROOT}/shared
+    chmod a+w ${MEDIA_ROOT}/outgoing ${MEDIA_ROOT}/shared
+
+    mkdir -p ${LOG_DIR} ${CFG_DIR} ${DB_CFG_DIR}
+    chown www-data:www-data ${LOG_DIR} ${CFG_DIR} ${DB_CFG_DIR}
+    chown -R www-data:www-data ${HTTP_ROOT}/admin_updates
+
+    # set initial ssl certificate, if no cert exists
+    if [ -z $WA_WEB_SERVERNAME ]; then
+        WA_WEB_SERVERNAME=localhost
+    fi
+
+    # On AWS, password is stored as secure parameter
+    if [ ! -z "${WA_RUNNING_ENV}" -a "${WA_RUNNING_ENV}" = "AWS" ]; then
+        echo "Running on AWS"
+        passwd=$(/opt/whatsapp/bin/ssm.py ${AWS_REGION} ${AWS_STACK_NAME}-WA_DB_PASSWORD 2>>/dev/stderr)
+        if [ ! -z "${passwd}" ]; then
+            export WA_DB_PASSWORD=${passwd}
+        else
+            print "AWS: Unable to read DB password from secure store"
+        fi
+    fi
+
+    # create web db and store db config database.yml in DB_CFG_DIR
+    /usr/bin/php ${SCRIPTS_DIR}/CreateWebDB.php ${HTTP_ROOT} ${DB_CFG_DIR}
+
+    # allow writes to sqlite web db
+    if [ -f ${CFG_DIR}/waweb.db ]; then
+      chown www-data:www-data ${CFG_DIR}/waweb.db
+    fi
+
+    source /opt/whatsapp/bin/web_setup.sh && setup_ssl $WA_WEB_SERVERNAME ${SCRIPTS_DIR}
+    source /opt/whatsapp/bin/web_setup.sh && disable_ssl
+    source /opt/whatsapp/bin/web_setup.sh && setup_env_vars
+
+    /usr/sbin/php-fpm7.0
+    # dockers containers need tcp, so "true" is always correct here.
+    /usr/bin/php ${SCRIPTS_DIR}/BuildConfigJson.php true $WACORE_HOSTNAME $WACORE_BASEPORT
+
+    # start web server in background; this allows restart of web server
+    /etc/init.d/lighttpd start
+    echo "Web server started"
+
+    tail -F /var/log/lighttpd/error.log /var/log/whatsapp/web.log &
+
+    # run web monitor in foreground; web monitor runs forever
+    echo "Starting web monitor loop ..."
+    source /opt/whatsapp/bin/web_setup.sh && web_monitor | tee /var/log/wa_monitor.log
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  creationTimestamp: null
+  labels:
+    app: waweb
+  name: waweb
+spec:
+  ports:
+  - name: "http"
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: waweb
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations: {}
+  creationTimestamp: null
+  labels:
+    app: waweb
+  name: waweb
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: waweb
+    spec:
+      restartPolicy: Always
+      volumes:
+      - name: whatsapp-media
+        flexVolume:
+          driver: ceph.rook.io/rook
+          fsType: ceph
+          options:
+            fsName: whatsapp-media
+            clusterNamespace: rook-ceph
+      - name: entrypoint
+        configMap:
+          name: launch-within-docker
+          defaultMode: 0755
+      containers:
+      - image: docker.whatsapp.biz/web:v2.21.6
+        name: waweb
+        args:
+          - /opt/whatsapp/bin/wait_on_mysql.sh
+          - /opt/whatsapp/bin/launch_within_docker.sh
+        env:
+        - name: ORCHESTRATION
+          value: DOCKER-COMPOSE
+        - name: WA_APP_MULTICONNECT
+          value: "1"
+        - name: WA_DB_ENGINE
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_ENGINE
+              name: wa-config
+        - name: WA_DB_HOSTNAME
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_HOSTNAME
+              name: wa-config
+        - name: WA_DB_NAME_PREFIX
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_NAME_PREFIX
+              name: wa-config
+        - name: WA_DB_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_PASSWORD
+              name: wa-config
+        - name: WA_DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_PORT
+              name: wa-config
+        - name: WA_DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_USERNAME
+              name: wa-config
+        - name: WA_RUNNING_ENV_VERSION
+          value: v2.2.2
+#          - name: WEBAPP_EXTERNAL_PORTS
+#            value: "9090"
+        - name: WEBAPP_HOSTNAME
+          valueFrom:
+            configMapKeyRef:
+              key: WEBAPP_HOSTNAME
+              name: wa-config
+        ports:
+          - containerPort: 80
+        resources: {}
+        volumeMounts:
+          - mountPath: /usr/local/wamedia
+            name: whatsapp-media
+          - name: entrypoint
+            mountPath: /opt/whatsapp/bin/launch_within_docker.sh
+            subPath: launch_within_docker.sh
+#       livenessProbe:
+#          httpGet:
+#            path: /v1/health
+#            port: 443
+#          initialDelaySeconds: 5
+#          periodSeconds: 3
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: wa-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+#    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+#    ingress.kubernetes.io/force-ssl-redirect: "false"
+#    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+#    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    certmanager.k8s.io/cluster-issuer: "letsencrypt-prod"
+    certmanager.k8s.io/acme-challenge-type: http01
+spec:
+  tls:
+  - hosts:
+    - wa.uplancebot.net
+    secretName: wa-uplancebot-net-tls
+  rules:
+  - host: wa.uplancebot.net
+    http:
+      paths:
+      - backend:
+          serviceName: waweb
+          servicePort: http

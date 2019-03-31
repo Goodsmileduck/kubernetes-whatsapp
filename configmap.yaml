@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wa-config
+data:
+  WA_DB_ENGINE: MYSQL
+  WA_DB_HOSTNAME: mysql.mysql.svc.cluster.local
+  WA_DB_NAME_PREFIX: client1_
+  WA_DB_PASSWORD: testpass
+  WA_DB_PORT: "3306"
+  WA_DB_USERNAME: root
+  COREAPP_EXTERNAL_PORTS: 6250,6251,6252,6253
+  WEBAPP_HOSTNAME: wa.uplancebot.net
+

@@ -1,0 +1,123 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: master
+  annotations: {}
+spec:
+  clusterIP: None
+  ports:
+  - name: "6254"
+    port: 6254
+    targetPort: 6250
+  - name: "6255"
+    port: 6255
+    targetPort: 6251
+  - name: "6256"
+    port: 6256
+    targetPort: 6252
+  - name: "6257"
+    port: 6257
+    targetPort: 6253
+  selector:
+    app: master
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: master
+spec:
+  serviceName: master
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: master
+        environment: test
+    spec:
+      terminationGracePeriodSeconds: 10
+      restartPolicy: Always
+      volumes:
+      - name: whatsapp-media
+        flexVolume:
+          driver: ceph.rook.io/rook
+          fsType: ceph
+          options:
+            fsName: whatsapp-media
+            clusterNamespace: rook-ceph
+      - name: whatsapp-data
+        flexVolume:
+          driver: ceph.rook.io/rook
+          fsType: ceph
+          options:
+            fsName: whatsapp-data
+            clusterNamespace: rook-ceph
+#      - name: whatsapp-data
+#        persistentVolumeClaim:
+#          claimName: whatsapp-data
+      containers:
+      - name: master
+        image: docker.whatsapp.biz/coreapp:v2.21.6
+        args:
+          - /opt/whatsapp/bin/wait_on_mysql.sh
+          - /opt/whatsapp/bin/launch_within_docker.sh
+        env:
+        - name: ORCHESTRATION
+          value: DOCKER-COMPOSE
+        - name: WA_APP_MULTICONNECT
+          value: "1"
+        - name: COREAPP_EXTERNAL_PORTS
+          valueFrom:
+            configMapKeyRef:
+              key: COREAPP_EXTERNAL_PORTS
+              name: wa-config
+        - name: COREAPP_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+              #fieldPath: metadata.labels['statefulset.kubernetes.io/pod-name']
+        - name: WA_DB_ENGINE
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_ENGINE
+              name: wa-config
+        - name: WA_DB_HOSTNAME
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_HOSTNAME
+              name: wa-config
+        - name: WA_DB_NAME_PREFIX
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_NAME_PREFIX
+              name: wa-config
+        - name: WA_DB_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_PASSWORD
+              name: wa-config
+        - name: WA_DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_PORT
+              name: wa-config
+        - name: WA_DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              key: WA_DB_USERNAME
+              name: wa-config
+        - name: WA_MASTER_NODE
+          value: "1"
+        - name: WA_RUNNING_ENV_VERSION
+          value: v2.2.2
+        ports:
+          - containerPort: 6250
+          - containerPort: 6251
+          - containerPort: 6252
+          - containerPort: 6253
+        resources: {}
+        volumeMounts:
+        - mountPath: /usr/local/wamedia
+          name: whatsapp-media
+        - mountPath: /usr/local/waent/data
+          name: whatsapp-data
