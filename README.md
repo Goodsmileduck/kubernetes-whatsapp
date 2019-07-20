@@ -17,7 +17,7 @@ To install the chart with the release name `my-release`:
 $ helm install --name my-release .
 ```
 
-The command deploys MySQL on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+The command deploys WhatsApp on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 By default helm deploys single node deployment.
 
