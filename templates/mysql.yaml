@@ -1,0 +1,75 @@
+{{- if eq .Values.db.engine "MYSQL" }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-volume-claim
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.db.volumeSize }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mysql-service
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  selector:
+    app: mysql
+  ports:
+  - protocol: TCP
+    port: {{ .Values.db.port }}
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+        release: {{ template "fullname" . }}
+    spec:
+      containers:
+      - name: mysql
+        image: "{{ .Values.db.mysql.repository }}:{{ .Values.db.mysql.tag }}"
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "secretName" . }}
+              key: WA_DB_PASSWORD
+        - name: MYSQL_DATABASE
+          value: {{ .Values.db.hostname }}
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "secretName" . }}
+              key: WA_DB_USERNAME
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "secretName" . }}
+              key: WA_DB_PASSWORD
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-volume-claim
+{{- end }}

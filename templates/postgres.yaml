@@ -1,0 +1,72 @@
+{{- if eq .Values.db.engine "PGSQL" }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pgsql-volume-claim
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.db.volumeSize }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: pgsql-service
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  selector:
+    app: mysql
+  ports:
+  - protocol: TCP
+    port: {{ .Values.db.port }}
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgsql
+  template:
+    metadata:
+      labels:
+        app: pgsql
+        release: {{ template "fullname" . }}
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ .Values.db.pgsql.repository }}:{{ .Values.db.pgsql.tag }}"
+        env:
+        - name: POSTGRES_DB
+          value: {{ .Values.db.hostname }}
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "secretName" . }}
+              key: WA_DB_USERNAME
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "secretName" . }}
+              key: WA_DB_PASSWORD
+        ports:
+          - containerPort: 5432
+        volumeMounts:
+          - mountPath: /var/lib/postgresql/data
+            name: pgsql-persistent-storage
+      volumes:
+      - name: pgsql-persistent-storage
+        persistentVolumeClaim:
+          claimName: pgsql-volume-claim
+{{- end }}

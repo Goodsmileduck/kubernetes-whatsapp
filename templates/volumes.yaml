@@ -1,0 +1,85 @@
+{{- if eq .Values.db.type "nfs" }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ template "fullname" . }}
+spec:
+  capacity:
+    storage: {{ .Values.wamedia.volumeSize }}
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: {{ .Values.nfs.server }}
+    path: "{{ .Values.nfs.path }}"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ template "fullname" . }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: {{ .Values.wamedia.volumeSize }}
+
+{{- elif eq .Values.db.type "efs" }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ template "fullname" . }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.wamedia.volumeSize }}
+  storageClassName: efs
+{{- elif eq .Values.db.type "ceph" }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ template "fullname" . }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.wamedia.volumeSize }}
+  storageClassName: {{ .Values.wamedia.ceph.storageClassName }}
+{{ else }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    release: {{ template "fullname" . }}
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: {{ .Values.wamedia.volumeSize }}
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/usr/local/wamedia"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.wamedia.volumeSize }}
+{{- end }}

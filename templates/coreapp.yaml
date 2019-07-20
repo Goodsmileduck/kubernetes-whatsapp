@@ -1,0 +1,120 @@
+{{- if .Values.multiconnect }}
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: whatsapp-master-autoscaler
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  maxReplicas: {{ .Values.core.maxReplicas }}
+  minReplicas: {{ .Values.core.minReplicas }}
+  scaleTargetRef:
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    name: whatsapp-coreapp-deployment
+  targetCPUUtilizationPercentage: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whatsapp-coreapp-service
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  clusterIP: None
+  ports:
+  - port: 6250
+    targetPort: 6250
+    protocol: TCP
+    name: messaging
+  - port: 6251
+    targetPort: 6251
+    protocol: TCP
+    name: contacts
+  - port: 6252
+    targetPort: 6252
+    protocol: TCP
+    name: control
+  - port: 6253
+    targetPort: 6253
+    protocol: TCP
+    name: healthcheck
+  selector:
+    name: whatsapp-coreapp
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: whatsapp-coreapp-deployment
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  replicas: {{ .Values.core.replicas }}
+  template:
+    metadata:
+      labels:
+        name: whatsapp-coreapp
+        release: {{ template "fullname" . }}
+{{- if .Values.podAnnotations }}
+      annotations:
+{{ toYaml .Values.core.podAnnotations | indent 8 }}
+{{- end }}
+    spec:
+      restartPolicy: {{ .Values.core.restartPolicy }}
+      containers:
+      - name: whatsapp-coreapp
+        image: "{{ .Values.image.core.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        resources:
+{{ toYaml .Values.core.resources | indent 12 }}
+        ports:
+        - containerPort: 6250
+          protocol: TCP
+          name: messaging
+        - containerPort: 6251
+          protocol: TCP
+          name: contacts
+        - containerPort: 6252
+          protocol: TCP
+          name: control
+        - containerPort: 6253
+          protocol: TCP
+          name: healthcheck
+        env:
+        - name: WA_DB_ENGINE
+          value: {{ .Values.db.engine }}
+        - name: WA_TCP_LISTEN_ADDRESS
+          value: 'any'
+        - name: WA_APP_MULTICONNECT
+          value: '1'
+        - name: WA_CONFIG_ON_DB
+          value: '1'
+        - name: COREAPP_EXTERNAL_PORTS
+          value: '6250,6251,6252,6253'
+        - name: WA_DB_HOSTNAME
+          value: {{ .Values.db.hostname }}
+        - name: WA_DB_PORT
+          value: {{ .Values.db.port }}
+        - name: WA_DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "secretName" . }}
+              key: WA_DB_USERNAME
+        - name: WA_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "secretName" . }}
+              key: WA_DB_PASSWORD
+        - name: COREAPP_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        volumeMounts:
+        - name: whatsapp-media
+          mountPath: /usr/local/wamedia
+      volumes:
+      - name: whatsapp-media
+        persistentVolumeClaim:
+          claimName: {{ template "fullname" . }}
+{{- end }}

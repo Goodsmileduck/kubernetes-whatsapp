@@ -1,0 +1,94 @@
+{{- if .Values.multiconnect }}
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: whatsapp-web-autoscaler
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  maxReplicas: {{ .Values.core.maxReplicas }}
+  minReplicas: {{ .Values.core.minReplicas }}
+  scaleTargetRef:
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    name: whatsapp-web-deployment
+  targetCPUUtilizationPercentage: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whatsapp-web-service
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  type: NodePort
+  ports:
+  - port: 443
+    targetPort: 443
+    protocol: TCP
+    name: web
+  selector:
+    name: whatsapp-web
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: whatsapp-web-deployment
+  labels:
+    release: {{ template "fullname" . }}
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        name: whatsapp-web
+        release: {{ template "fullname" . }}
+{{- if .Values.web.podAnnotations }}
+      annotations:
+{{ toYaml .Values.web.podAnnotations | indent 8 }}
+{{- end }}
+    spec:
+      restartPolicy: {{ .Values.web.restartPolicy }}
+      containers:
+      - name: whatsapp-web
+        image: "{{ .Values.image.web.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        resources:
+{{ toYaml .Values.web.resources | indent 12 }}
+        ports:
+        - containerPort: 443
+          protocol: TCP
+          name: web
+        env:
+        - name: WA_DB_ENGINE
+          valueFrom:
+            secretKeyRef:
+              name: whatsapp-config
+              key: wa-db-engine
+        - name: WA_APP_MULTICONNECT
+          value: '1'
+        - name: WA_DB_HOSTNAME
+          value: {{ .Values.db.hostname }}
+        - name: WA_DB_PORT
+          value: {{ .Values.db.port }}
+        - name: WA_DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "secretName" . }}
+              key: WA_DB_USERNAME
+        - name: WA_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "secretName" . }}
+              key: WA_DB_PASSWORD
+        - name: WA_WEB_SERVERNAME
+          value: {{ .Values.web.hostname }}
+        volumeMounts:
+        - name: whatsapp-media
+          mountPath: /usr/local/wamedia
+      volumes:
+      - name: whatsapp-media
+        persistentVolumeClaim:
+          claimName: {{ template "fullname" . }}
+{{- end }}

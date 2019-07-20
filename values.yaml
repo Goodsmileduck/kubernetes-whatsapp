@@ -1,0 +1,61 @@
+multiconnect: True
+db:
+#Could be MYSQL or PGSQL
+  engine: MYSQL
+  volumeSize: 10Gi
+  efs: False
+  port: 3306
+  mysql:
+    repository: mysql
+    tag: 5.7.22
+  pgsql:
+    repository: postgres
+    tag: 10.9
+image:
+  tag: v2.23.5
+  pullPolicy: Always
+  master:
+    replicas: 2
+    maxReplicas: 3
+    minReplicas: 2
+    repository: docker.whatsapp.biz/coreapp
+    resources:
+      limits:
+        memory : 128Mi
+      requests:
+        cpu: "0.15"
+        memory : 128Mi
+  core:
+    replicas: 2
+    maxReplicas: 3
+    minReplicas: 2
+    repository: docker.whatsapp.biz/coreapp
+    resources:
+      limits:
+        memory : 128Mi
+      requests:
+        cpu: "0.15"
+        memory : 128Mi
+  web:
+    hostname: some.hostname.com
+    replicas: 2
+    maxReplicas: 3
+    minReplicas: 2
+    repository: docker.whatsapp.biz/web
+    resources:
+      limits:
+        memory : 128Mi
+      requests:
+        cpu: "0.15"
+        memory : 128Mi
+wamedia:
+#Could be efs, nfs or ceph
+  type: efs
+  volumeSize: 1Gi
+
+  nfs:
+    server: nfs-server.default.svc.cluster.local
+    path: /wamedia
+  ceph:
+    storageClassName: ceph
+  
