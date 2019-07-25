@@ -1,4 +1,4 @@
-{{- if eq .Values.db.type "nfs" }}
+{{- if eq .Values.wamedia.type "nfs" }}
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -10,8 +10,8 @@ spec:
   accessModes:
     - ReadWriteMany
   nfs:
-    server: {{ .Values.nfs.server }}
-    path: "{{ .Values.nfs.path }}"
+    server: {{ .Values.wamedia.nfs.server }}
+    path: "{{ .Values.wamedia.nfs.path }}"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -25,7 +25,7 @@ spec:
     requests:
       storage: {{ .Values.wamedia.volumeSize }}
 
-{{- elif eq .Values.db.type "efs" }}
+{{- else if eq .Values.wamedia.type "efs" }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -38,7 +38,7 @@ spec:
     requests:
       storage: {{ .Values.wamedia.volumeSize }}
   storageClassName: efs
-{{- elif eq .Values.db.type "ceph" }}
+{{- else if eq .Values.wamedia.type "ceph" }}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1

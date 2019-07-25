@@ -3,7 +3,7 @@
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: whatsapp-master-autoscaler
+  name: {{ template "fullname" . }}-master-autoscaler
   labels:
     release: {{ template "fullname" . }}
 spec:
@@ -12,13 +12,13 @@ spec:
   scaleTargetRef:
     apiVersion: extensions/v1beta1
     kind: Deployment
-    name: whatsapp-master-deployment
+    name: {{ template "fullname" . }}-master
   targetCPUUtilizationPercentage: 60
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: whatsapp-master-service
+  name: {{ template "fullname" . }}-master
   labels:
     release: {{ template "fullname" . }}
 spec:
@@ -41,12 +41,12 @@ spec:
     protocol: TCP
     name: healthcheck
   selector:
-    name: whatsapp-master
+    name: {{ template "fullname" . }}-master
 ---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: whatsapp-master-deployment
+  name: {{ template "fullname" . }}-master
   labels:
     release: {{ template "fullname" . }}
 spec:
@@ -54,7 +54,7 @@ spec:
   template:
     metadata:
       labels:
-        name: whatsapp-master
+        name: {{ template "fullname" . }}-master
         release: {{ template "fullname" . }}
 {{- if .Values.master.podAnnotations }}
       annotations:
@@ -64,7 +64,7 @@ spec:
       restartPolicy: {{ .Values.master.restartPolicy }}
       containers:
       - name: whatsapp-master
-        image: "{{ .Values.image.master.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.master.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
 {{ toYaml .Values.core.resources | indent 12 }}
@@ -95,12 +95,12 @@ spec:
         - name: WA_MASTER_NODE
           value: '1'
         - name: WA_DB_HOSTNAME
-          value: {{ .Values.db.hostname }}
+          value: {{ template "fullname" . }}-db
         - name: WA_DB_PORT
-          value: {{ .Values.db.port }}
+          value: {{ .Values.db.port | quote }}
         - name: WA_DB_USERNAME
           valueFrom:
-            secretKeyRef:
+            configMapKeyRef:
               name: {{ template "secretName" . }}
               key: WA_DB_USERNAME
         - name: WA_DB_PASSWORD

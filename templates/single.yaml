@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: whatsapp-web-service
+  name: {{ template "fullname" . }}-web
 spec:
   type: NodePort
   ports:
@@ -12,12 +12,12 @@ spec:
     protocol: TCP
     name: web
   selector:
-    name: whatsapp-web
+    name: {{ template "fullname" . }}-web
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: whatsapp-coreapp-service
+  name: {{ template "fullname" . }}-coreapp
 spec:
   clusterIP: None
   ports:
@@ -38,18 +38,18 @@ spec:
     protocol: TCP
     name: healthcheck
   selector:
-    name: whatsapp-coreapp
+    name: {{ template "fullname" . }}-coreapp
 ---
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: whatsapp-coreapp-deployment
+  name: {{ template "fullname" . }}-coreapp
 spec:
   replicas: {{ .Values.core.replicas }}
   template:
     metadata:
       labels:
-        name: whatsapp-coreapp
+        name: {{ template "fullname" . }}-coreapp
         release: {{ template "fullname" . }}
 {{- if .Values.podAnnotations }}
       annotations:
@@ -59,7 +59,7 @@ spec:
       restartPolicy: {{ .Values.core.restartPolicy }}
       containers:
       - name: whatsapp-coreapp
-        image: "{{ .Values.image.core.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.core.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
 {{ toYaml .Values.core.resources | indent 12 }}
@@ -88,12 +88,12 @@ spec:
         - name: COREAPP_EXTERNAL_PORTS
           value: '6250,6251,6252,6253'
         - name: WA_DB_HOSTNAME
-          value: {{ .Values.db.hostname }}
+          value: {{ template "fullname" . }}-db
         - name: WA_DB_PORT
-          value: {{ .Values.db.port }}
+          value: {{ .Values.db.port | quote }}
         - name: WA_DB_USERNAME
           valueFrom:
-            secretKeyRef:
+            configMapKeyRef:
               name: {{ template "secretName" . }}
               key: WA_DB_USERNAME
         - name: WA_DB_PASSWORD
@@ -116,13 +116,13 @@ spec:
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: whatsapp-web-deployment
+  name: {{ template "fullname" . }}-whatsapp-web
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        name: whatsapp-web
+        name: {{ template "fullname" . }}-whatsapp-web
         release: {{ template "fullname" . }}
 {{- if .Values.podAnnotations }}
       annotations:
@@ -132,7 +132,7 @@ spec:
       restartPolicy: {{ .Values.core.restartPolicy }}
       containers:
       - name: whatsapp-web
-        image: "{{ .Values.image.web.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.web.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
 {{ toYaml .Values.web.resources | indent 12 }}
@@ -146,12 +146,12 @@ spec:
         - name: WA_APP_MULTICONNECT
           value: '0'
         - name: WA_DB_HOSTNAME
-          value: {{ .Values.db.hostname }}
+          value: {{ template "fullname" . }}-db
         - name: WA_DB_PORT
-          value: {{ .Values.db.port }}
+          value: {{ .Values.db.port | quote }}
         - name: WA_DB_USERNAME
           valueFrom:
-            secretKeyRef:
+            configMapKeyRef:
               name: {{ template "secretName" . }}
               key: WA_DB_USERNAME
         - name: WA_DB_PASSWORD
