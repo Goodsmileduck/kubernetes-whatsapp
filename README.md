@@ -37,3 +37,12 @@ The command removes all the Kubernetes components associated with the chart and 
 ## Configuration
 
 The following table lists the configurable parameters of the WhatsApp chart and their default values.
+
+
+## TODO
+
+* Update docs for configuration
+* Add Healthcheck for core/web containers
+* Update volume configuration
+* Add affinitiy support
+* Add tests
