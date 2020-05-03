@@ -38,6 +38,12 @@ The command removes all the Kubernetes components associated with the chart and 
 
 The following table lists the configurable parameters of the WhatsApp chart and their default values.
 
+| Parameter       | Description                     | Default    |
+| --------------- |---------------------------------|------------|
+| `multiconnect`  | Multiconnect mode               | `False`    |
+| `db.engine`     | Database engine                 | `MYSQL`    |
+| `db.host`       | Hostname to access database     | `[]`       |
+
 
 ## TODO
 
