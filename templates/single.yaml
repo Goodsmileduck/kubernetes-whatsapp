@@ -5,7 +5,7 @@ kind: Service
 metadata:
   name: {{ template "fullname" . }}-web
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
   - port: 443
     targetPort: 443
@@ -45,7 +45,7 @@ kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-coreapp
 spec:
-  replicas: {{ .Values.core.replicas }}
+  replicas: 1
   template:
     metadata:
       labels:
@@ -88,7 +88,7 @@ spec:
         - name: COREAPP_EXTERNAL_PORTS
           value: '6250,6251,6252,6253'
         - name: WA_DB_HOSTNAME
-          value: {{ template "fullname" . }}-db
+          value: {{ .Values.db.host | quote }}
         - name: WA_DB_PORT
           value: {{ .Values.db.port | quote }}
         - name: WA_DB_USERNAME
@@ -140,13 +140,14 @@ spec:
         - containerPort: 443
           protocol: TCP
           name: web
+        command: ["/opt/whatsapp/bin/wait_on_mysql.sh", "/opt/whatsapp/bin/launch_within_docker.sh"]
         env:
         - name: WA_DB_ENGINE
           value: {{ .Values.db.engine }}
         - name: WA_APP_MULTICONNECT
           value: '0'
         - name: WA_DB_HOSTNAME
-          value: {{ template "fullname" . }}-db
+          value: {{ .Values.db.host | quote }}
         - name: WA_DB_PORT
           value: {{ .Values.db.port | quote }}
         - name: WA_DB_USERNAME
@@ -160,7 +161,7 @@ spec:
               name: {{ template "secretName" . }}
               key: WA_DB_PASSWORD
         - name: WA_WEB_SERVERNAME
-          value: {{ .Values.web.hostname }}
+          value: {{ template "fullname" . }}-web
         volumeMounts:
         - name: whatsapp-media
           mountPath: /usr/local/wamedia

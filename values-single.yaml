@@ -1,4 +1,4 @@
-multiconnect: true
+multiconnect: false
 db:
 #Could be MYSQL or PGSQL
   engine: MYSQL
@@ -12,20 +12,7 @@ image:
   tag: v2.27.11
   pullPolicy: Always
 
-master:
-  replicas: 3
-  repository: docker.whatsapp.biz/coreapp
-  resources:
-    limits:
-      memory : 256Mi
-    requests:
-      cpu: 100m
-      memory : 64Mi
-
 core:
-  replicas: 3
-  maxReplicas: 5
-  minReplicas: 3
   repository: docker.whatsapp.biz/coreapp
   resources:
     limits:
@@ -38,9 +25,6 @@ web:
   ingress:
     enabled: True
   domain: domain.net
-  replicas: 2
-  maxReplicas: 5
-  minReplicas: 2
   repository: docker.whatsapp.biz/web
   resources:
     limits:
@@ -48,17 +32,9 @@ web:
     requests:
       cpu: 100m
       memory : 64Mi
+
 wamedia:
-#Could be efs, nfs or ceph
-  type: efs
-  volumeSize: 1Gi
-  nfs:
-    server: nfs-server.default.svc.cluster.local
-    path: /wamedia
-  ceph:
-    storageClassName: ceph
-  efs:
-    keepDays: 30
+  volumeSize: 10Gi
 
 # Monitoring based on prometheus image from Whatsapp
 monitoring:

@@ -1,7 +1,7 @@
 name: whatsapp
-description: Deploy a Whatsapp client api
+description: Deploy a Whatsapp Business api
 version: 0.1.1
 home: https://github.com/helm/helm
 sources:
   - https://github.com/helm/helm
-appVersion: 2.23.5
+appVersion: 2.27.11

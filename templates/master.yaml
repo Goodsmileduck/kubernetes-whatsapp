@@ -1,20 +1,5 @@
 {{- if .Values.multiconnect }}
 ---
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: {{ template "fullname" . }}-master-autoscaler
-  labels:
-    release: {{ template "fullname" . }}
-spec:
-  maxReplicas: {{ .Values.master.maxReplicas }}
-  minReplicas: {{ .Values.master.minReplicas }}
-  scaleTargetRef:
-    apiVersion: extensions/v1beta1
-    kind: Deployment
-    name: {{ template "fullname" . }}-master
-  targetCPUUtilizationPercentage: 60
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -43,7 +28,7 @@ spec:
   selector:
     name: {{ template "fullname" . }}-master
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-master
@@ -51,6 +36,9 @@ metadata:
     release: {{ template "fullname" . }}
 spec:
   replicas: {{ .Values.master.replicas }}
+  selector:
+    matchLabels:
+      name: {{ template "fullname" . }}-master
   template:
     metadata:
       labels:
@@ -100,7 +88,7 @@ spec:
           value: {{ .Values.db.port | quote }}
         - name: WA_DB_USERNAME
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               name: {{ template "secretName" . }}
               key: WA_DB_USERNAME
         - name: WA_DB_PASSWORD
@@ -119,4 +107,4 @@ spec:
       - name: whatsapp-media
         persistentVolumeClaim:
           claimName: {{ template "fullname" . }}
-{{- end }}
+      {{- end }}

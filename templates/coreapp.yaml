@@ -43,7 +43,7 @@ spec:
   selector:
     name: {{ template "fullname" . }}-coreapp
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-coreapp
@@ -51,12 +51,15 @@ metadata:
     release: {{ template "fullname" . }}
 spec:
   replicas: {{ .Values.core.replicas }}
+  selector:
+    matchLabels:
+      name: {{ template "fullname" . }}-coreapp
   template:
     metadata:
       labels:
         name: {{ template "fullname" . }}-coreapp
         release: {{ template "fullname" . }}
-{{- if .Values.podAnnotations }}
+{{- if .Values.core.podAnnotations }}
       annotations:
 {{ toYaml .Values.core.podAnnotations | indent 8 }}
 {{- end }}
@@ -93,12 +96,14 @@ spec:
         - name: COREAPP_EXTERNAL_PORTS
           value: '6250,6251,6252,6253'
         - name: WA_DB_HOSTNAME
-          value: {{ template "fullname" . }}-db
+          value: {{ .Values.db.host | quote }}
         - name: WA_DB_PORT
           value: {{ .Values.db.port | quote }}
+        - name: WA_DB_CONNECTION_IDLE_TIMEOUT
+          value: {{ .Values.db.idleTimeout | quote }}
         - name: WA_DB_USERNAME
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               name: {{ template "secretName" . }}
               key: WA_DB_USERNAME
         - name: WA_DB_PASSWORD

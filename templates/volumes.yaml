@@ -28,6 +28,87 @@ spec:
 {{- else if eq .Values.wamedia.type "efs" }}
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-media-cleanup
+data:
+  media_cleanup.py: |
+    import os
+    import sys
+    import time
+     
+    def remove(path):
+        """
+        Remove the file or directory
+        """
+        if os.path.isdir(path):
+            print(f"Unable to remove folder: {path}")
+        else:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except OSError:
+                print(f"Unable to remove file: {path}")
+     
+    def cleanup(number_of_days, path):
+        """
+        Removes files from the passed in path that are older than or equal 
+        to the number_of_days
+        """
+        time_in_secs = time.time() - (number_of_days * 24 * 60 * 60)
+        removed = 0
+        for root, dirs, files in os.walk(path, topdown=False):
+          for file_ in files:
+              full_path = os.path.join(root, file_)
+              stat = os.stat(full_path)
+
+              if stat.st_mtime <= time_in_secs:
+                  remove(full_path)
+                  print(f'{full_path} removed')
+                  removed += 1
+        print(f'Total files removed: {removed}')
+     
+    if __name__ == "__main__":
+        days = int(os.environ.get('KEEP_DAYS', "30"))
+        path = os.environ.get('MEDIA_PATH', "/usr/local/wamedia")
+        cleanup(days, path)
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ template "fullname" . }}-media-cleanup-job
+spec:
+  schedule: "0 1 * * *"
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: media-cleanup-job
+            image: "{{ .Values.scripts.repository }}:{{ .Values.scripts.tag }}"
+            env:
+            - name: KEEP_DAYS
+              value: "{{ .Values.wamedia.efs.keepDays }}"
+            - name: MEDIA_PATH
+              value: '/usr/local/wamedia'
+            command: ["python", "/scripts/media_cleanup.py"]
+            volumeMounts:
+            - name: whatsapp-media
+              mountPath: /usr/local/wamedia
+            - name: processing-scripts
+              mountPath: /scripts
+              readOnly: true
+          volumes:
+          - name: whatsapp-media
+            persistentVolumeClaim:
+              claimName: {{ template "fullname" . }}
+          - name: processing-scripts
+            configMap:
+              name: {{ template "fullname" . }}-media-cleanup
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ template "fullname" . }}

@@ -1,8 +1,8 @@
-# WhatsApp business API
+# WhatsApp Business API
 
 ## Introduction
 
-This chart bootstraps a single node or multiconnect WhatsApp api deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart bootstraps a single node or multiconnect WhatsApp Business API deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
@@ -11,24 +11,25 @@ This chart bootstraps a single node or multiconnect WhatsApp api deployment on a
 
 ## Installing the Chart
 
-To install the chart with the release name `my-release`:
+To install the chart with the release name `whatsapp`:
 
 ```bash
-$ helm install --name my-release .
+$ helm install --name whatsapp .
 ```
 
-The command deploys WhatsApp on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+The command deploys WhatsApp Business API on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
-By default helm deploys single node deployment.
+By default helm deploys multiconnect node deployment.
 
+To deploy single node deployment use file [values-single.yaml](templates/values-single.yaml)
 > **Tip**: List all releases using `helm list`
 
 ## Uninstalling the Chart
 
-To uninstall/delete the `my-release` deployment:
+To uninstall/delete the `whatsapp` deployment:
 
 ```bash
-$ helm delete my-release
+$ helm delete --purge whatsapp
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
