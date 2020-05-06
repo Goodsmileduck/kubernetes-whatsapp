@@ -48,6 +48,8 @@ web:
     requests:
       cpu: 100m
       memory : 64Mi
+# change webApiKey for accessing web container without login min 12, max 128 characters
+  webApiKey: 29304tgw3o4ur0234gw3rf34
 wamedia:
 #Could be efs, nfs or ceph
   type: efs

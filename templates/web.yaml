@@ -83,11 +83,24 @@ spec:
             secretKeyRef:
               name: {{ template "secretName" . }}
               key: WA_DB_PASSWORD
+        - name: WA_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "secretName" . }}
+              key: WA_API_KEY
         - name: WA_WEB_SERVERNAME
           value: {{ template "fullname" . }}-web
         volumeMounts:
         - name: whatsapp-media
           mountPath: /usr/local/wamedia
+        livenessProbe:
+          exec:
+            command:
+            - 'bash'
+            - '-c'
+            - 'curl --fail -k https://localhost:443/v1/health --header "Authorization: Apikey ${WA_API_KEY}"'
+          initialDelaySeconds: 30
+          periodSeconds: 15
       volumes:
       - name: whatsapp-media
         persistentVolumeClaim:
