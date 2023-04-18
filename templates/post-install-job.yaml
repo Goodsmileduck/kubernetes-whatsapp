@@ -1,3 +1,4 @@
+{{- if .Values.postInstall.enabled -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -122,3 +123,4 @@ spec:
       - name: processing-scripts
         configMap:
           name: {{ template "fullname" . }}-register-api
+{{- end -}}

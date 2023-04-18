@@ -9,7 +9,7 @@ db:
   idleTimeout: 180000
 
 image:
-  tag: v2.27.11
+  tag: v2.47.1
   pullPolicy: Always
 
 master:
@@ -36,7 +36,7 @@ core:
 
 web:
   ingress:
-    enabled: True
+    enabled: true
   domain: domain.net
   replicas: 2
   maxReplicas: 5
@@ -48,8 +48,7 @@ web:
     requests:
       cpu: 100m
       memory : 64Mi
-# change webApiKey for accessing web container without login min 12, max 128 characters
-  webApiKey: 29304tgw3o4ur0234gw3rf34
+
 wamedia:
 #Could be efs, nfs or ceph
   type: efs
@@ -96,3 +95,9 @@ monitoring:
     interval: '15s'
     scrapeTimeout: '10s'
     match: '{job=~"webstats|appstats"}'
+
+tokenSecretName: liveness-probe
+postInstall:
+  enabled: true
+preUpgrade:
+  enabled: true

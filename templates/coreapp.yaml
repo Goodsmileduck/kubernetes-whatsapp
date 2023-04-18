@@ -48,9 +48,12 @@ kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-coreapp
   labels:
-    release: {{ template "fullname" . }}
+    app: "{{ template "fullname" . }}-coreapp"
 spec:
   replicas: {{ .Values.core.replicas }}
+  strategy:
+    type: Recreate
+    rollingUpdate: null
   selector:
     matchLabels:
       name: {{ template "fullname" . }}-coreapp
@@ -71,6 +74,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
 {{ toYaml .Values.core.resources | indent 12 }}
+        command: ["/opt/whatsapp/bin/wait_on_mysql.sh", "/opt/whatsapp/bin/launch_within_docker.sh"]
         ports:
         - containerPort: 6250
           protocol: TCP
@@ -96,7 +100,11 @@ spec:
         - name: COREAPP_EXTERNAL_PORTS
           value: '6250,6251,6252,6253'
         - name: WA_DB_HOSTNAME
+        {{- if .Values.db.enabled  }}
+          value: {{ template "fullname" . }}-db
+        {{ else }}
           value: {{ .Values.db.host | quote }}
+        {{- end }}
         - name: WA_DB_PORT
           value: {{ .Values.db.port | quote }}
         - name: WA_DB_CONNECTION_IDLE_TIMEOUT
