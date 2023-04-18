@@ -70,7 +70,11 @@ spec:
         - name: WA_APP_MULTICONNECT
           value: '1'
         - name: WA_DB_HOSTNAME
+        {{- if .Values.db.enabled  }}
+          value: {{ template "fullname" . }}-db
+        {{ else }}
           value: {{ .Values.db.host | quote }}
+        {{- end }}
         - name: WA_DB_PORT
           value: {{ .Values.db.port | quote }}
         - name: WA_DB_USERNAME
@@ -86,7 +90,7 @@ spec:
         - name: WA_API_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ template "secretName" . }}
+              name: {{ .Values.tokenSecretName }}
               key: WA_API_KEY
         - name: WA_WEB_SERVERNAME
           value: {{ template "fullname" . }}-web

@@ -33,9 +33,12 @@ kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-master
   labels:
-    release: {{ template "fullname" . }}
+    app: "{{ template "fullname" . }}-master"
 spec:
   replicas: {{ .Values.master.replicas }}
+  strategy:
+    type: Recreate
+    rollingUpdate: null
   selector:
     matchLabels:
       name: {{ template "fullname" . }}-master
@@ -56,6 +59,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
 {{ toYaml .Values.core.resources | indent 12 }}
+        command: ["/opt/whatsapp/bin/wait_on_mysql.sh", "/opt/whatsapp/bin/launch_within_docker.sh"]
         ports:
         - containerPort: 6250
           protocol: TCP
@@ -83,7 +87,11 @@ spec:
         - name: WA_MASTER_NODE
           value: '1'
         - name: WA_DB_HOSTNAME
+        {{- if .Values.db.enabled  }}
           value: {{ template "fullname" . }}-db
+        {{ else }}
+          value: {{ .Values.db.host | quote }}
+        {{- end }}
         - name: WA_DB_PORT
           value: {{ .Values.db.port | quote }}
         - name: WA_DB_USERNAME

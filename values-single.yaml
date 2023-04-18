@@ -9,7 +9,7 @@ db:
   idleTimeout: 180000
 
 image:
-  tag: v2.27.11
+  tag: v2.47.1
   pullPolicy: Always
 
 core:
@@ -70,3 +70,9 @@ monitoring:
     interval: '15s'
     scrapeTimeout: '10s'
     match: '{job=~"webstats|appstats"}'
+    
+tokenSecretName: liveness-probe
+postInstall:
+  enabled: true
+preUpgrade:
+  enabled: true

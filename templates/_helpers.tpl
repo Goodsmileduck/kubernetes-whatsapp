@@ -18,3 +18,11 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{ default (include "fullname" .) .Values.existingSecret }}
 {{- end -}}
 
+{{- define "livenessProbeToken" -}}
+{{- $token := (lookup "v1" "Secret" .Release.Namespace .Values.tokenSecretName ) -}}
+{{- if $token -}}
+{{- $token.data.WA_API_KEY -}}
+{{- else -}}
+{{- randAlpha 20 | b64enc -}}
+{{- end -}}
+{{- end -}}
