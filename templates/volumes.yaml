@@ -73,7 +73,7 @@ data:
         path = os.environ.get('MEDIA_PATH', "/usr/local/wamedia")
         cleanup(days, path)
 ---
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ template "fullname" . }}-media-cleanup-job
