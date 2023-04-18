@@ -1,0 +1,124 @@
+name: Build helm chart
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  helm-lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      name: Checkout the branch
+      with:
+        fetch-depth: 50
+        token: ${{ secrets.GIT_ACTION_PAT }}
+
+    - name: Set up Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: v3.8.1
+
+    - name: Fetch deps
+      run: |
+        helm dependency update .
+
+    - name: Linting Helm
+      run: |
+        helm lint .
+
+    - name: Unittesting Helm
+      run: |
+        export HELM_PLUGINS="/root/.helm-plugins"
+
+        if [ ! -e "./tests" ]; then
+          echo "Not running tests, directory doesn't exist: ./tests"
+          exit 0
+        fi
+
+        if [ ! -e "${HELM_PLUGINS}/helm-unittest" ]; then
+          helm plugin install https://github.com/quintush/helm-unittest
+        fi
+        helm unittest --helm3 --color .
+
+  helm-package:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      name: Checkout the branch
+      with:
+        fetch-depth: 50
+        token: ${{ secrets.GIT_ACTION_PAT }}
+
+    - name: Set up Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: v3.8.1
+
+    - name: Fetch deps
+      run: |
+        helm dependency update .
+
+    - name: Get new chart version
+      run: |
+        echo "VERSION=$(cat ./Chart.yaml | grep version | head -1 | sed -e "s/version: //" | \
+        awk -F'[.]'  '{ major=$1;minor=$2;patch=$3;patch += 1;minor += patch / 20;patch = patch % 20;printf( "%d.%d.%d\n", major, minor, patch );}' )" \
+        >> $GITHUB_ENV
+
+    - name: Update chart version
+      run: |
+        sed -i 's/^version: .*$/version: '"$VERSION"'/1' ./Chart.yaml
+
+    - name: Debug
+      id: version
+      run: |
+        echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+    - name: Generate changelog
+      id: Changelog
+      uses: metcalfc/changelog-generator@v4.0.1
+      with:
+        myToken: ${{ secrets.GIT_ACTION_PAT }}
+
+    - name: Update chart version in remote repo
+      run: |
+        git pull origin main
+        git add ./Chart.yaml
+        git commit -m "[AUTO] update chart version"
+        git push --force
+
+    - name: Copy chart to gh-pages branch
+      run: |
+        git fetch origin gh-pages
+        git checkout gh-pages -f
+        git checkout main ./ -f
+
+    - name: Package and indexing Chart
+      run: |
+        helm dependency update ./
+        helm package ./
+        helm repo index .
+
+    - name: Commit to branch
+      run: |
+        git restore --staged ./
+        git add index.yaml *.tgz
+        git commit -m "[AUTO] New Whatsapp-API Chart version"
+        git push
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GIT_ACTION_PAT }}
+      with:
+        tag_name: "${{ env.VERSION }}-whatsapp-api"
+        release_name: "${{ env.VERSION }}-whatsapp-api"
+        body: ${{ steps.Changelog.outputs.changelog }}
+        draft: false
+        prerelease: false
+        commitish: main
