@@ -103,4 +103,4 @@ preUpgrade:
   enabled: true
 scripts:
   repository: python
-  tag: 3.6-alpine
+  tag: 3.8-alpine

@@ -93,7 +93,7 @@ spec:
               value: "{{ .Values.wamedia.efs.keepDays }}"
             - name: MEDIA_PATH
               value: '/usr/local/wamedia'
-            command: ["python", "/scripts/media_cleanup.py"]
+            command: ["sh", "-c", "pip install requests==2.28.2", "&&", "python", "/scripts/media_cleanup.py"]
             volumeMounts:
             - name: whatsapp-media
               mountPath: /usr/local/wamedia
