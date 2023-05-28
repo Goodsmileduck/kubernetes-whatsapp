@@ -5,7 +5,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ template "fullname" . }}-prometheus-pvc
   labels:
-    release: {{ template "fullname" . }}
+    app: {{ template "fullname" . }}-prometheus
 spec:
   accessModes:
     - ReadWriteOnce
@@ -16,7 +16,7 @@ spec:
   storageClassName: efs
 {{- end }}
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-prometheus
@@ -93,7 +93,6 @@ metadata:
   name: {{ template "fullname" . }}-prometheus
   labels:
     app: {{ template "fullname" . }}-prometheus
-    release: {{ template "fullname" . }}   
 spec:
   type: {{ .Values.monitoring.service.type }}
   ports:
@@ -113,7 +112,7 @@ metadata:
   namespace: {{ .Values.serviceMonitor.namespace }}
 {{- end }}
   labels:
-    release: {{ template "fullname" . }}
+    app: {{ template "fullname" . }}-prometheus
 {{- if .Values.monitoring.serviceMonitor.labels }}
 {{ toYaml .Values.monitoring.serviceMonitor.labels | indent 4 }}
 {{- end }}
@@ -148,7 +147,8 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: {{ template "fullname" . }}-monitoring
-type: Opaque
+  labels:
+    app: {{ template "fullname" . }}-prometheus
 data:
 {{- range $name, $value := .Values.monitoring.secret }}
 {{- if not (empty $value) }}

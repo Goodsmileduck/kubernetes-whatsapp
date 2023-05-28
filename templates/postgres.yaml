@@ -6,7 +6,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ template "fullname" . }}-pgsql-pvc
   labels:
-    app: {{ template "fullname" . }}-pgsql
+    app: {{ template "fullname" . }}-postgres
 spec:
   accessModes:
     - ReadWriteOnce
@@ -19,22 +19,22 @@ apiVersion: v1
 metadata:
   name: {{ template "fullname" . }}-db
   labels:
-    app: {{ template "fullname" . }}-pgsql
+    app: {{ template "fullname" . }}-postgres
 spec:
   selector:
     app: {{ template "fullname" . }}-postgres
   ports:
   - protocol: TCP
-    port: {{ .Values.db.port }}
+    port: {{ .Values.db.pgsql.port }}
     targetPort: 5432
   type: ClusterIP
 ---
-apiVersion: {{ template "deployment.apiVersion" . }}
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-postgres
   labels:
-    app: {{ template "fullname" . }}-pgsql
+    app: {{ template "fullname" . }}-postgres
 spec:
   replicas: 1
   selector:
@@ -43,37 +43,14 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "fullname" . }}-pgsql
+        app: {{ template "fullname" . }}-postgres
     spec:
-      {{- if or (eq .Values.antiAffinity "hard") (eq .Values.antiAffinity "soft") }}
-      affinity:
-      {{- end }}
-      {{- if eq .Values.antiAffinity "hard" }}
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/lifecycle
-                operator: In
-                values:
-                - normal
-      {{- else if eq .Values.antiAffinity "soft" }}
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 1
-            preference:
-              matchExpressions:
-              - key: nodegroup
-                operator: In
-                values:
-                - SpotNodeGroup
-      {{- end }}
       containers:
       - name: postgres
         image: "{{ .Values.db.pgsql.repository }}:{{ .Values.db.pgsql.tag }}"
         env:
-        - name: POSTGRES_DB
-          value: {{ .Values.db.hostname }}
+#        - name: POSTGRES_DB
+#          value: {{ .Values.db.hostname }}
         - name: POSTGRES_USER
           valueFrom:
             configMapKeyRef:

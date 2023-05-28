@@ -5,7 +5,7 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: {{ template "fullname" . }}-coreapp-autoscaler
   labels:
-    release: {{ template "fullname" . }}
+    app: {{ template "fullname" . }}-coreapp
 spec:
   maxReplicas: {{ .Values.core.maxReplicas }}
   minReplicas: {{ .Values.core.minReplicas }}
@@ -20,7 +20,7 @@ kind: Service
 metadata:
   name: {{ template "fullname" . }}-coreapp
   labels:
-    release: {{ template "fullname" . }}
+    app: {{ template "fullname" . }}-coreapp
 spec:
   clusterIP: None
   ports:
@@ -48,7 +48,7 @@ kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-coreapp
   labels:
-    app: "{{ template "fullname" . }}-coreapp"
+    app: {{ template "fullname" . }}-coreapp
 spec:
   replicas: {{ .Values.core.replicas }}
   strategy:
@@ -57,11 +57,14 @@ spec:
   selector:
     matchLabels:
       name: {{ template "fullname" . }}-coreapp
+{{- if .Values.core.podAnnotations }}
+      annotations:
+{{ toYaml .Values.core.podAnnotations | indent 8 }}
+{{- end }}
   template:
     metadata:
       labels:
         name: {{ template "fullname" . }}-coreapp
-        release: {{ template "fullname" . }}
 {{- if .Values.core.podAnnotations }}
       annotations:
 {{ toYaml .Values.core.podAnnotations | indent 8 }}
@@ -89,26 +92,10 @@ spec:
           protocol: TCP
           name: healthcheck
         env:
-        - name: WA_DB_ENGINE
-          value: {{ .Values.db.engine }}
-        - name: WA_TCP_LISTEN_ADDRESS
-          value: 'any'
         - name: WA_APP_MULTICONNECT
-          value: '1'
-        - name: WA_CONFIG_ON_DB
           value: '1'
         - name: COREAPP_EXTERNAL_PORTS
           value: '6250,6251,6252,6253'
-        - name: WA_DB_HOSTNAME
-        {{- if .Values.db.enabled  }}
-          value: {{ template "fullname" . }}-db
-        {{ else }}
-          value: {{ .Values.db.host | quote }}
-        {{- end }}
-        - name: WA_DB_PORT
-          value: {{ .Values.db.port | quote }}
-        - name: WA_DB_CONNECTION_IDLE_TIMEOUT
-          value: {{ .Values.db.idleTimeout | quote }}
         - name: WA_DB_USERNAME
           valueFrom:
             secretKeyRef:
@@ -123,6 +110,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        envFrom:
+        - configMapRef:
+            name: {{ template "fullname" . }}
         volumeMounts:
         - name: whatsapp-media
           mountPath: /usr/local/wamedia

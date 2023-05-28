@@ -1,16 +1,31 @@
+image:
+  tag: v2.47.3
+  pullPolicy: Always
+
 multiconnect: true
 db:
-#Could be MYSQL or PGSQL
-  engine: MYSQL
-  host: mysql-svc
-  port: 3306
+  enabled: true
   user: root
   password: "P@ssW0rd1"
   idleTimeout: 180000
+  volumeSize: 10Gi
+#Could be MYSQL or PGSQL
+  engine: "MYSQL"
+  mysql:
+    repository: mysql
+    tag: 5.7.21
+    port: 3306
+    configurationFilesPath: /etc/mysql/conf.d/
+    configurationFiles:
+      mysql.cnf: |-
+        [mysqld]
+        max_connections=300
+  pgsql:
+    repository: postgres
+    tag: 13.8
+    port: 5432
 
-image:
-  tag: v2.47.1
-  pullPolicy: Always
+
 
 master:
   replicas: 3
@@ -37,7 +52,13 @@ core:
 web:
   ingress:
     enabled: true
-  domain: domain.net
+    path: /
+    tls:
+    - secretName: tls-secret
+      hosts:
+       - domain.net
+    hosts:
+    - domain.net
   replicas: 2
   maxReplicas: 5
   minReplicas: 2
@@ -63,7 +84,7 @@ wamedia:
 
 # Monitoring based on prometheus image from Whatsapp
 monitoring:
-  enabled: True
+  enabled: False
   prometheus:
     restartPolicy: Always
     image:
@@ -96,11 +117,11 @@ monitoring:
     scrapeTimeout: '10s'
     match: '{job=~"webstats|appstats"}'
 
-tokenSecretName: liveness-probe
+tokenSecretName: web-api-key
 postInstall:
   enabled: true
 preUpgrade:
   enabled: true
 scripts:
   repository: python
-  tag: 3.6-alpine
+  tag: 3.8-alpine

@@ -8,9 +8,7 @@ data:
   register_api.py: |
     import requests
     import sys, os
-    from argparse import ArgumentParser, RawTextHelpFormatter
     import json
-    import boto3
     from time import sleep
     from socket import gethostbyname
 
@@ -114,7 +112,7 @@ spec:
           value: {{ template "fullname" . }}-web
         - name: SKIPSSL
           value: "True"
-        command: ["python", "/scripts/register_api.py", "$URL", "$SKIPSSL"]
+        command: ["sh", "-c", "pip install requests==2.28.2", "&&", "python", "/scripts/register_api.py", "$URL", "$SKIPSSL"]
         volumeMounts:
           - name: processing-scripts
             mountPath: /scripts

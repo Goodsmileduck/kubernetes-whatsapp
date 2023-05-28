@@ -1,16 +1,29 @@
+image:
+  tag: v2.47.3
+  pullPolicy: Always
+
 multiconnect: false
 db:
-#Could be MYSQL or PGSQL
-  engine: MYSQL
-  host: mysql-svc
-  port: 3306
+  enabled: true
   user: root
   password: "P@ssW0rd1"
   idleTimeout: 180000
-
-image:
-  tag: v2.47.1
-  pullPolicy: Always
+  volumeSize: 10Gi
+#Could be MYSQL or PGSQL
+  engine: "MYSQL"
+  mysql:
+    repository: mysql
+    tag: 5.7.21
+    port: 3306
+    configurationFilesPath: /etc/mysql/conf.d/
+    configurationFiles:
+      mysql.cnf: |-
+        [mysqld]
+        max_connections=300
+  pgsql:
+    repository: postgres
+    tag: 13.8
+    port: 5432
 
 core:
   repository: docker.whatsapp.biz/coreapp
@@ -23,7 +36,14 @@ core:
 
 web:
   ingress:
-    enabled: True
+    enabled: true
+    path: /
+    tls:
+    - secretName: tls-secret
+      hosts:
+       - domain.net
+    hosts:
+    - domain.net
   domain: domain.net
   repository: docker.whatsapp.biz/web
   resources:

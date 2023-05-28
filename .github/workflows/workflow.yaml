@@ -15,7 +15,6 @@ jobs:
       name: Checkout the branch
       with:
         fetch-depth: 50
-        token: ${{ secrets.GIT_ACTION_PAT }}
 
     - name: Set up Helm
       uses: azure/setup-helm@v3
@@ -52,7 +51,6 @@ jobs:
       name: Checkout the branch
       with:
         fetch-depth: 50
-        token: ${{ secrets.GIT_ACTION_PAT }}
 
     - name: Set up Helm
       uses: azure/setup-helm@v3

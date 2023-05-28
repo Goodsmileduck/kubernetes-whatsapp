@@ -73,7 +73,7 @@ data:
         path = os.environ.get('MEDIA_PATH', "/usr/local/wamedia")
         cleanup(days, path)
 ---
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ template "fullname" . }}-media-cleanup-job
@@ -93,7 +93,7 @@ spec:
               value: "{{ .Values.wamedia.efs.keepDays }}"
             - name: MEDIA_PATH
               value: '/usr/local/wamedia'
-            command: ["python", "/scripts/media_cleanup.py"]
+            command: ["sh", "-c", "pip install requests==2.28.2", "&&", "python", "/scripts/media_cleanup.py"]
             volumeMounts:
             - name: whatsapp-media
               mountPath: /usr/local/wamedia
