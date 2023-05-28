@@ -78,7 +78,7 @@ jobs:
 
     - name: Generate changelog
       id: Changelog
-      uses: metcalfc/changelog-generator@v4.0.1
+      uses: metcalfc/changelog-generator@v4.1.0
       with:
         myToken: ${{ secrets.GITHUB_TOKEN }}
 
