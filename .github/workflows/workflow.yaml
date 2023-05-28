@@ -80,7 +80,7 @@ jobs:
       id: Changelog
       uses: metcalfc/changelog-generator@v4.0.1
       with:
-        myToken: ${{ secrets.GIT_ACTION_PAT }}
+        myToken: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update chart version in remote repo
       run: |
@@ -111,8 +111,6 @@ jobs:
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GIT_ACTION_PAT }}
       with:
         tag_name: "${{ env.VERSION }}-whatsapp-api"
         release_name: "${{ env.VERSION }}-whatsapp-api"
