@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  whatsapp:
+  - apiVersion: v2
+    appVersion: 2.47.1
+    created: "2023-05-28T15:40:08.906651069Z"
+    description: Deploy a Whatsapp Business api
+    digest: f4b8e95f5499c8f98f2284fbd51d787c0fbf2d6d8e4c3c0e6617e02bc2e5df70
+    name: whatsapp
+    type: application
+    urls:
+    - whatsapp-0.1.4.tgz
+    version: 0.1.4
+generated: "2023-05-28T15:40:08.902838033Z"
