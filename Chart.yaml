@@ -2,5 +2,5 @@ apiVersion: v2
 name: whatsapp
 description: Deploy a Whatsapp Business api
 type: application
-version: 0.1.4
+version: 0.1.5
 appVersion: 2.47.1
