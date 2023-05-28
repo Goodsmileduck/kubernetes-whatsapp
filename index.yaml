@@ -3,7 +3,17 @@ entries:
   whatsapp:
   - apiVersion: v2
     appVersion: 2.47.1
-    created: "2023-05-28T15:52:35.731971475Z"
+    created: "2023-05-28T16:03:10.363164164Z"
+    description: Deploy a Whatsapp Business api
+    digest: 9ca941f6ddf819cd692c9e39b31ce26374ce8096879e5642d1adc367f9754158
+    name: whatsapp
+    type: application
+    urls:
+    - whatsapp-0.1.7.tgz
+    version: 0.1.7
+  - apiVersion: v2
+    appVersion: 2.47.1
+    created: "2023-05-28T16:03:10.346740185Z"
     description: Deploy a Whatsapp Business api
     digest: d10820339ffa27975885a51b64d339ff562605b5e25d1d0a5961669a5366b42c
     name: whatsapp
@@ -13,7 +23,7 @@ entries:
     version: 0.1.6
   - apiVersion: v2
     appVersion: 2.47.1
-    created: "2023-05-28T15:52:35.723438753Z"
+    created: "2023-05-28T16:03:10.33698896Z"
     description: Deploy a Whatsapp Business api
     digest: ab74a8c377d74df54e05c99c16e9bec09aebfe703ccf943b4eda08cefa9869e1
     name: whatsapp
@@ -23,7 +33,7 @@ entries:
     version: 0.1.5
   - apiVersion: v2
     appVersion: 2.47.1
-    created: "2023-05-28T15:52:35.719192242Z"
+    created: "2023-05-28T16:03:10.332158548Z"
     description: Deploy a Whatsapp Business api
     digest: f4b8e95f5499c8f98f2284fbd51d787c0fbf2d6d8e4c3c0e6617e02bc2e5df70
     name: whatsapp
@@ -31,4 +41,4 @@ entries:
     urls:
     - whatsapp-0.1.4.tgz
     version: 0.1.4
-generated: "2023-05-28T15:52:35.714698631Z"
+generated: "2023-05-28T16:03:10.32876767Z"
