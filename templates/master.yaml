@@ -5,7 +5,7 @@ kind: Service
 metadata:
   name: {{ template "fullname" . }}-master
   labels:
-    release: {{ template "fullname" . }}
+    app: {{ template "fullname" . }}-master
 spec:
   clusterIP: None
   ports:
@@ -33,7 +33,7 @@ kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-master
   labels:
-    app: "{{ template "fullname" . }}-master"
+    app: {{ template "fullname" . }}-master
 spec:
   replicas: {{ .Values.master.replicas }}
   strategy:
@@ -47,9 +47,9 @@ spec:
       labels:
         name: {{ template "fullname" . }}-master
         release: {{ template "fullname" . }}
-{{- if .Values.master.podAnnotations }}
+{{- if .Values.core.podAnnotations }}
       annotations:
-{{ toYaml .Values.master.podAnnotations | indent 8 }}
+{{ toYaml .Values.core.podAnnotations | indent 8 }}
 {{- end }}
     spec:
       restartPolicy: {{ .Values.master.restartPolicy }}
@@ -74,26 +74,12 @@ spec:
           protocol: TCP
           name: healthcheck
         env:
-        - name: WA_DB_ENGINE
-          value: {{ .Values.db.engine }}
-        - name: WA_TCP_LISTEN_ADDRESS
-          value: 'any'
         - name: WA_APP_MULTICONNECT
-          value: '1'
-        - name: WA_CONFIG_ON_DB
           value: '1'
         - name: COREAPP_EXTERNAL_PORTS
           value: '6250,6251,6252,6253'
         - name: WA_MASTER_NODE
           value: '1'
-        - name: WA_DB_HOSTNAME
-        {{- if .Values.db.enabled  }}
-          value: {{ template "fullname" . }}-db
-        {{ else }}
-          value: {{ .Values.db.host | quote }}
-        {{- end }}
-        - name: WA_DB_PORT
-          value: {{ .Values.db.port | quote }}
         - name: WA_DB_USERNAME
           valueFrom:
             secretKeyRef:
@@ -108,6 +94,9 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        envFrom:
+        - configMapRef:
+            name: {{ template "fullname" . }}
         volumeMounts:
         - name: whatsapp-media
           mountPath: /usr/local/wamedia

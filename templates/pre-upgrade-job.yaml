@@ -27,22 +27,8 @@ spec:
         env:
         - name: WA_DB_UPGRADE
           value: "1"
-        - name: WA_DB_ENGINE
-          value: {{ .Values.db.engine }}
-        - name: WA_TCP_LISTEN_ADDRESS
-          value: 'any'
-        - name: WA_APP_MULTICONNECT
-          value: '1'
-        - name: WA_CONFIG_ON_DB
-          value: '1'
         - name: COREAPP_EXTERNAL_PORTS
           value: '6250,6251,6252,6253'
-        - name: WA_DB_HOSTNAME
-          value: {{ template "fullname" . }}-db
-        - name: WA_DB_PORT
-          value: {{ .Values.db.port | quote }}
-        - name: WA_DB_CONNECTION_IDLE_TIMEOUT
-          value: {{ .Values.db.idleTimeout | quote }}
         - name: WA_DB_USERNAME
           valueFrom:
             secretKeyRef:
@@ -53,5 +39,12 @@ spec:
             secretKeyRef:
               name: {{ template "secretName" . }}
               key: WA_DB_PASSWORD
+        envFrom:
+        - configMapRef:
+            name: {{ template "fullname" . }}
+        {{- if eq .Values.db.engine "MYSQL" }}
         command: ["/opt/whatsapp/bin/wait_on_mysql.sh", "/opt/whatsapp/bin/launch_within_docker.sh"]
+        {{ else }}
+        command: ["/opt/whatsapp/bin/launch_within_docker.sh"]
+        {{- end -}}
 {{- end -}}

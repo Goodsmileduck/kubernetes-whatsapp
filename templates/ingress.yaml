@@ -1,8 +1,16 @@
 {{- if .Values.web.ingress.enabled -}}
+{{- $fullName := include "fullname" . -}}
+{{- $ingressPath := .Values.web.ingress.path -}}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
 kind: Ingress
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ $fullName }}
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
 {{- if .Values.web.ingress.annotations }}
@@ -10,12 +18,36 @@ metadata:
 {{ toYaml .Values.web.ingress.annotations | indent 4 }}
 {{- end }}
 spec:
+  {{- if .Values.web.ingress.tls }}
+  tls:
+    {{- range .Values.web.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . | quote }}
+      {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
   rules:
-  - host:  {{ .Values.web.ingress.domain }}
+  {{- range .Values.web.ingress.hosts }}
+  - host: {{ . | quote }}
     http:
       paths:
-      - path: /
-        backend:
-          serviceName: {{ template "fullname" . }}
-          servicePort: 443
-{{- end -}}
+        - path: {{ $ingressPath }}
+          {{- if semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion }}
+          pathType: Prefix
+          {{- end }}
+          backend:
+            {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+            service:
+              name: {{ $fullName }}
+              port:
+                number: 443
+            {{- else }}
+            serviceName: {{ $fullName }}
+            servicePort: https
+            {{- end }}
+  {{- end }}
+{{- end }}
+
+

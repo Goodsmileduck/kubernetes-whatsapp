@@ -5,7 +5,7 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: {{ template "fullname" . }}-web-autoscaler
   labels:
-    release: {{ template "fullname" . }}
+    app: {{ template "fullname" . }}-web
 spec:
   maxReplicas: {{ .Values.web.maxReplicas }}
   minReplicas: {{ .Values.web.minReplicas }}
@@ -20,14 +20,14 @@ kind: Service
 metadata:
   name: {{ template "fullname" . }}-web
   labels:
-    release: {{ template "fullname" . }}
+    app: {{ template "fullname" . }}-web
 spec:
   type: ClusterIP
   ports:
   - port: 443
     targetPort: 443
     protocol: TCP
-    name: web
+    name: https
   selector:
     name: {{ template "fullname" . }}-web
 ---
@@ -36,7 +36,7 @@ kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-web
   labels:
-    release: {{ template "fullname" . }}
+    app: {{ template "fullname" . }}-web
 spec:
   replicas: 2
   selector:
@@ -46,10 +46,9 @@ spec:
     metadata:
       labels:
         name: {{ template "fullname" . }}-web
-        release: {{ template "fullname" . }}
-{{- if .Values.web.podAnnotations }}
+{{- if .Values.core.podAnnotations }}
       annotations:
-{{ toYaml .Values.web.podAnnotations | indent 8 }}
+{{ toYaml .Values.core.podAnnotations | indent 8 }}
 {{- end }}
     spec:
       restartPolicy: {{ .Values.web.restartPolicy }}
@@ -62,21 +61,11 @@ spec:
         ports:
         - containerPort: 443
           protocol: TCP
-          name: web
+          name: https
         command: ["/opt/whatsapp/bin/wait_on_mysql.sh", "/opt/whatsapp/bin/launch_within_docker.sh"]
         env:
-        - name: WA_DB_ENGINE
-          value: {{ .Values.db.engine }}
         - name: WA_APP_MULTICONNECT
           value: '1'
-        - name: WA_DB_HOSTNAME
-        {{- if .Values.db.enabled  }}
-          value: {{ template "fullname" . }}-db
-        {{ else }}
-          value: {{ .Values.db.host | quote }}
-        {{- end }}
-        - name: WA_DB_PORT
-          value: {{ .Values.db.port | quote }}
         - name: WA_DB_USERNAME
           valueFrom:
             secretKeyRef:
@@ -94,6 +83,9 @@ spec:
               key: WA_API_KEY
         - name: WA_WEB_SERVERNAME
           value: {{ template "fullname" . }}-web
+        envFrom:
+        - configMapRef:
+            name: {{ template "fullname" . }}
         volumeMounts:
         - name: whatsapp-media
           mountPath: /usr/local/wamedia

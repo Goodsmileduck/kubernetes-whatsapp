@@ -33,11 +33,11 @@ spec:
     app: {{ template "fullname" . }}-mysql
   ports:
   - protocol: TCP
-    port: {{ .Values.db.port }}
+    port: {{ .Values.db.mysql.port }}
     targetPort: 3306
   type: ClusterIP
 ---
-apiVersion: {{ template "deployment.apiVersion" . }}
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "fullname" . }}-mysql
