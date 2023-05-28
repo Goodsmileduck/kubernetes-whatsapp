@@ -8,8 +8,10 @@ data:
   WA_DB_CONNECTION_IDLE_TIMEOUT: {{ .Values.db.idleTimeout | quote }}
 {{- if eq .Values.db.engine  "MYSQL" }}
   WA_DB_PORT: {{ .Values.db.mysql.port | quote }}
-{{- else }}
+{{- elif eq .Values.db.engine  "PGSQL" }}
   WA_DB_PORT: {{ .Values.db.pgsql.port | quote }}
+{{- else }}
+  WA_DB_PORT: {{ .Values.db.port | quote }}
 {{- end }}
 {{- if .Values.db.enabled  }}
   WA_DB_HOSTNAME: {{ template "fullname" . }}-db

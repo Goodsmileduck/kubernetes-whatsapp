@@ -4,7 +4,10 @@ image:
 
 multiconnect: true
 db:
-  enabled: true
+  enabled: false
+# for external db
+#  host: mysql.host.com
+#  port: 3306
   user: root
   password: "P@ssW0rd1"
   idleTimeout: 180000
