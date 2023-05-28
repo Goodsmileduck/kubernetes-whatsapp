@@ -4,6 +4,17 @@
 
 This chart bootstraps a single node or multiconnect WhatsApp Business API deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
+### Some features available in chart comparing to official manifests:
+
+- Ingress resource
+- Provides preconfigured database deployment (mysql/postgres)
+- Might be configured to use shared storages (EFS/NFS/Ceph) for media files
+- Changes admin password after installation (still in development)
+- Web deployment has livenessProbe based on WA_API_KEY
+- Database upgrades runs on any helm release upgrade
+- Cronjob which delete media files by schedule from volume
+
+
 ## Prerequisites
 
 - Kubernetes 1.9+
@@ -11,10 +22,16 @@ This chart bootstraps a single node or multiconnect WhatsApp Business API deploy
 
 ## Installing the Chart
 
+Add repo first:
+
+```bash
+helm repo add whatsapp https://goodsmileduck.github.io/kubernetes-whatsapp/
+```
+
 To install the chart with the release name `whatsapp`:
 
 ```bash
-$ helm install --name whatsapp .
+$ helm install whatsapp whatsapp/kubernetes-whatsapp
 ```
 
 The command deploys WhatsApp Business API on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
@@ -43,7 +60,6 @@ The following table lists the configurable parameters of the WhatsApp chart and 
 | `multiconnect`  | Multiconnect mode. Could be MYSQL or PGSQL| `False`    |
 | `db.engine`     | Database engine                           | `MYSQL`    |
 | `db.host`       | Hostname to access database               | `[]`       |
-
 
 ## TODO
 
