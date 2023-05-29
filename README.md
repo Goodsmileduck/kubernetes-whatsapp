@@ -8,12 +8,11 @@ This chart bootstraps a single node or multiconnect WhatsApp Business API deploy
 
 - Ingress resource
 - Provides preconfigured database deployment (mysql/postgres)
+- Database upgrades runs on any helm release upgrade (post-upgrade hook)
 - Might be configured to use shared storages (EFS/NFS/Ceph) for media files
-- Changes admin password after installation (still in development)
-- Web deployment has livenessProbe based on WA_API_KEY
-- Database upgrades runs on any helm release upgrade
 - Cronjob which delete media files by schedule from volume
-
+- Changes admin password after installation (post-install hook)
+- Web deployment has liveness Probe using WA_API_KEY
 
 ## Prerequisites
 

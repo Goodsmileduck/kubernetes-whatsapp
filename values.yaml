@@ -4,7 +4,7 @@ image:
 
 multiconnect: true
 db:
-  enabled: false
+  enabled: true
 # for external db
 #  host: mysql.host.com
 #  port: 3306
@@ -27,8 +27,6 @@ db:
     repository: postgres
     tag: 13.8
     port: 5432
-
-
 
 master:
   replicas: 3
@@ -121,6 +119,7 @@ monitoring:
     match: '{job=~"webstats|appstats"}'
 
 tokenSecretName: web-api-key
+adminPassword: "myNewPassword"
 postInstall:
   enabled: true
 preUpgrade:

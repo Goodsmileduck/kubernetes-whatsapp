@@ -3,4 +3,4 @@ name: whatsapp
 description: Deploy a Whatsapp Business api
 type: application
 version: 0.1.7
-appVersion: 2.47.1
+appVersion: 2.47.3

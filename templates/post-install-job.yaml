@@ -28,8 +28,8 @@ data:
             return True
         __bool__ = __nonzero__
 
-    def api_handler(url, skipssl):
-        """Update admin password, add 2fa, creates metrics user."""
+    def api_handler(url, skipssl, admin_password):
+        """Update admin password, creates metrics user."""
         wa_url = 'https://{}'.format(url)
         d = Timer(7)
         while d:
@@ -59,7 +59,6 @@ data:
         if test.status_code == 401 and not test.content:
             print("User password already changed.")
             sys.exit(0)
-        admin_password, pin, metrics_password, tango_user, tango_pass = get_secrets(env_name, channel_id)
         payload1 = {'new_password': admin_password}
         r1 = requests.post(wa_url + '/v1/users/login', data=payload1,
                            auth=('admin', 'secret'), verify=skipssl)
@@ -68,24 +67,25 @@ data:
             print(r1.reason)
             sys.exit(1)
         response = r1.json()
-        token = response["users"][0]["token"]
-        header = {'Content-type': 'application/json', 'Authorization': 'Bearer ' + token}
-        payload2 = {'username': 'metrics', 'password': metrics_password}
-        r2 = requests.post(wa_url + '/v1/users', data=json.dumps(payload2),
-                           headers=header, verify=skipssl)
-        if r2.status_code != 201:
-            print("Something wrong! Metrics user step")
-            print(r2.json())
-            sys.exit(1)
-        print("WhatsApp configuration successful!")
+        #token = response["users"][0]["token"]
+        #header = {'Content-type': 'application/json', 'Authorization': 'Bearer ' + token}
+        #payload2 = {'username': 'metrics', 'password': metrics_password}
+        #r2 = requests.post(wa_url + '/v1/users', data=json.dumps(payload2),
+        #                   headers=header, verify=skipssl)
+        #if r2.status_code != 201:
+        #    print("Something wrong! Metrics user step")
+        #    print(r2.json())
+        #    sys.exit(1)
+        #print("WhatsApp configuration successful!")
     if __name__ == '__main__':
         url = os.environ.get('URL')
+        admin_password = os.environ.get('WA_ADMIN_PASSWORD')
         SKIPSSL = os.environ.get('SKIPSSL', "False")
         if SKIPSSL == "True":
             skipssl = True
         else:
             skipssl = False
-        api_handler(url, skipssl)
+        api_handler(url, skipssl, admin_password)
 ---
 apiVersion: batch/v1
 kind: Job
@@ -112,6 +112,11 @@ spec:
           value: {{ template "fullname" . }}-web
         - name: SKIPSSL
           value: "True"
+        - name: WA_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "fullname" . }}-admin-password
+              key: WA_ADMIN_PASSWORD
         command: ["sh", "-c", "pip install requests==2.28.2", "&&", "python", "/scripts/register_api.py", "$URL", "$SKIPSSL"]
         volumeMounts:
           - name: processing-scripts
